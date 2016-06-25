@@ -24,6 +24,7 @@ import socket
 import timeit
 import platform
 import threading
+from six import string_types
 
 __version__ = '0.3.4'
 
@@ -46,42 +47,14 @@ except ImportError:
         from xml.dom import minidom as DOM
         ET = None
 
-# Begin import game to handle Python 2 and Python 3
-try:
-    from urllib2 import urlopen, Request, HTTPError, URLError
-except ImportError:
-    from urllib.request import urlopen, Request, HTTPError, URLError
+from six.moves.urllib.request import urlopen, Request
+from six.moves.urllib.error import HTTPError, URLError
 
-try:
-    from httplib import HTTPConnection, HTTPSConnection
-except ImportError:
-    e_http_py2 = sys.exc_info()
-    try:
-        from http.client import HTTPConnection, HTTPSConnection
-    except ImportError:
-        e_http_py3 = sys.exc_info()
-        raise SystemExit('Your python installation is missing required HTTP '
-                         'client classes:\n\n'
-                         'Python 2: %s\n'
-                         'Python 3: %s' % (e_http_py2[1], e_http_py3[1]))
+from six.moves.http_client import HTTPConnection, HTTPSConnection
 
-try:
-    from Queue import Queue
-except ImportError:
-    from queue import Queue
+from six.moves.queue import Queue
 
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
-
-try:
-    from urlparse import parse_qs
-except ImportError:
-    try:
-        from urllib.parse import parse_qs
-    except ImportError:
-        from cgi import parse_qs
+from six.moves.urllib.parse import urlparse, parse_qs
 
 try:
     from hashlib import md5
@@ -106,36 +79,24 @@ except ImportError:
             return
 
         def write(data):
-            if not isinstance(data, basestring):
+            if not isinstance(data, string_types):
                 data = str(data)
             fp.write(data)
 
-        want_unicode = False
         sep = kwargs.pop("sep", None)
         if sep is not None:
-            if isinstance(sep, unicode):
-                want_unicode = True
-            elif not isinstance(sep, str):
+            if not isinstance(sep, string_types):
                 raise TypeError("sep must be None or a string")
         end = kwargs.pop("end", None)
         if end is not None:
-            if isinstance(end, unicode):
-                want_unicode = True
-            elif not isinstance(end, str):
+            if not isinstance(end, string_types):
                 raise TypeError("end must be None or a string")
         if kwargs:
             raise TypeError("invalid keyword arguments to print()")
-        if not want_unicode:
-            for arg in args:
-                if isinstance(arg, unicode):
-                    want_unicode = True
-                    break
-        if want_unicode:
-            newline = unicode("\n")
-            space = unicode(" ")
-        else:
-            newline = "\n"
-            space = " "
+
+        newline = u"\n"
+        space = u" "
+
         if sep is None:
             sep = space
         if end is None:
@@ -645,8 +606,7 @@ def speedtest():
 
     if args.server:
         try:
-            best = getBestServer(filter(lambda x: x['id'] == args.server,
-                                        servers))
+            best = getBestServer([x for x in servers if x['id'] == args.server])
         except IndexError:
             print_('Invalid server ID')
             sys.exit(1)
