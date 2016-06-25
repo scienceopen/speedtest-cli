@@ -19,10 +19,9 @@ env:
 
 install:
  - pip install tox
- - python setup.py develop
 
 script:
- - tox
+ - tox -e $TOXENV
 
 notifications:
   email: false
